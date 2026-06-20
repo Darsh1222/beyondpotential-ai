@@ -446,6 +446,20 @@
     if (el) el.remove();
   }
 
+  async function typeWriter(bubble, text) {
+    // Stream character by character with slight variation for natural feel
+    const baseDelay = 12;
+    for (let i = 0; i < text.length; i++) {
+      bubble.textContent += text[i];
+      scrollToBottom();
+      // Slightly longer pause after sentence-ending punctuation
+      const char = text[i];
+      const pause = (char === '.' || char === '?' || char === '!') ? baseDelay * 6 :
+                    char === ',' ? baseDelay * 2 : baseDelay;
+      await new Promise(r => setTimeout(r, pause));
+    }
+  }
+
   async function send(text) {
     const content = (text ?? inputEl.value).trim();
     if (!content || loading) return;
@@ -480,7 +494,18 @@
       }
 
       messages.push({ role: 'assistant', content: data.reply });
-      addBubble('ai', data.reply);
+
+      // Create empty AI bubble then type into it
+      const row = document.createElement('div');
+      row.className = 'msg-row ai';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.textContent = '';
+      row.appendChild(bubble);
+      threadEl.appendChild(row);
+      scrollToBottom();
+
+      await typeWriter(bubble, data.reply);
 
     } catch (err) {
       removeTyping();
